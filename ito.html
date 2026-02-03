@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ito Web Companion - Pro Edition</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --accent: #e67e22;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { margin-bottom: 20px; font-size: 1.8rem; color: #2c3e50; }
+
+        /* 設定画面 */
+        #setup-screen {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        #name-inputs { margin: 20px 0; max-height: 300px; overflow-y: auto; }
+
+        /* ゲーム画面 */
+        #game-screen { display: none; }
+        .theme-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            border-left: 5px solid var(--accent);
+        }
+        .theme-text { font-weight: bold; font-size: 1.3rem; color: var(--accent); }
+
+        .player-list { display: grid; gap: 15px; margin-bottom: 30px; }
+        .player-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid #f0f0f0;
+            overflow: hidden;
+        }
+        .rank-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--success);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            display: none;
+        }
+        .player-name { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; }
+        
+        .memo-input {
+            width: 90%;
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .number-display { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+        .hidden { filter: blur(15px); color: #ddd; }
+
+        /* ボタン */
+        .btn-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+        .btn {
+            color: white; border: none; padding: 12px 20px; border-radius: 30px;
+            font-size: 0.9rem; font-weight: bold; cursor: pointer; flex: 1; min-width: 120px;
+        }
+        .btn-main { background: var(--primary); width: 100%; margin-bottom: 10px; }
+        .btn-reveal { background: var(--danger); }
+        .btn-sort { background: var(--success); }
+        .btn-reset { background: #95a5a6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ito Web Client</h1>
+
+    <div id="setup-screen">
+        <div class="input-group">
+            <label>プレイヤー人数 (1〜10人):</label>
+            <input type="number" id="player-count" value="4" min="1" max="10" onchange="generateNameInputs()">
+        </div>
+        <div id="name-inputs"></div>
+        <button class="btn btn-main" onclick="startGame()">ゲームを開始する</button>
+    </div>
+
+    <div id="game-screen">
+        <div class="theme-box">
+            <div id="theme" class="theme-text">- お題読み込み中 -</div>
+        </div>
+
+        <div id="players" class="player-list"></div>
+
+        <div class="btn-container">
+            <button class="btn btn-reveal" onclick="revealAll()">全員公開</button>
+            <button class="btn btn-sort" onclick="sortCards()">小さい順に並べる</button>
+            <button class="btn btn-reset" onclick="resetToSetup()">リセット</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const themes = [
+        "食べ物の人気", "怖いもの", "モテる趣味", "欲しい超能力", "ゾンビへの武器", "人生で大切なもの", "コンビニで買うもの", "嫌いな家事", "行きたい国", "嬉しいギフト", 
+        "習得したい言語の難しさ", "ショートカットキーの便利さ", "IT用語のかっこよさ", "デバッグの絶望感", "生成AIの賢さ", "プログラマーの私服", "SEの忙しさ", "Wi-Fiがないストレス", "プロジェクト進捗", "C言語の理解度",
+        "最強の必殺技", "悪役の魅力", "泣けるシーン", "転生したい世界", "呪術の使い勝手", "聖地巡礼したい場所", "SSRの嬉しさ", "アニソンの熱さ", "睡眠の質", "歌唱力", "怒られた時の怖さ", "幸福度", "運の良さ", "コミュ力"
+        // (お題は適宜追加・調整してください)
+    ];
+
+    window.onload = generateNameInputs;
+
+    function generateNameInputs() {
+        const count = document.getElementById('player-count').value;
+        const container = document.getElementById('name-inputs');
+        container.innerHTML = '<h3>プレイヤー名を入力</h3>';
+        for (let i = 1; i <= count; i++) {
+            container.innerHTML += `<div class="input-group"><input type="text" class="player-name-input" placeholder="プレイヤー ${i}" value="プレイヤー ${i}"></div>`;
+        }
+    }
+
+    function startGame() {
+        const names = Array.from(document.querySelectorAll('.player-name-input')).map(input => input.value || "名無し");
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+
+        const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+        document.getElementById('theme').innerText = `お題：${randomTheme}`;
+
+        const numbers = Array.from({length: 100}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+
+        const playerList = document.getElementById('players');
+        playerList.innerHTML = '';
+        names.forEach((name, i) => {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            // 数字をデータ属性(data-number)として持たせておくとソートが楽
+            card.setAttribute('data-number', numbers[i]);
+            card.innerHTML = `
+                <div class="rank-badge"></div>
+                <div class="player-name">${name}</div>
+                <input type="text" class="memo-input" placeholder="例えをメモ..." onclick="event.stopPropagation()">
+                <div class="number-display hidden">${numbers[i]}</div>
+            `;
+            card.onclick = function() {
+                this.querySelector('.number-display').classList.toggle('hidden');
+            };
+            playerList.appendChild(card);
+        });
+        window.scrollTo(0,0);
+    }
+
+    function revealAll() {
+        document.querySelectorAll('.number-display').forEach(d => d.classList.remove('hidden'));
+    }
+
+    // ★今回のメイン：並べ替え機能
+    function sortCards() {
+        const playerList = document.getElementById('players');
+        const cards = Array.from(playerList.getElementsByClassName('player-card'));
+
+        // 数字(data-number)に基づいてソート
+        cards.sort((a, b) => {
+            return parseInt(a.getAttribute('data-number')) - parseInt(b.getAttribute('data-number'));
+        });
+
+        // ソートされた順にDOMを再配置し、順位バッジを表示
+        cards.forEach((card, index) => {
+            const badge = card.querySelector('.rank-badge');
+            badge.innerText = `${index + 1}番目`;
+            badge.style.display = 'block';
+            playerList.appendChild(card); // appendChildは既存要素があれば移動させる性質がある
+        });
+
+        // 並べ替えと同時に数字も公開する
+        revealAll();
+    }
+
+    function resetToSetup() {
+        if(confirm('リセットしますか？')) {
+            document.getElementById('setup-screen').style.display = 'block';
+            document.getElementById('game-screen').style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
