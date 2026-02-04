@@ -2,112 +2,59 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ito Web Companion - Pro Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ito Web - Final Edition</title>
     <style>
         :root {
-            --primary: #4a90e2;
-            --bg: #f0f4f8;
-            --card-bg: #ffffff;
-            --accent: #e67e22;
-            --danger: #e74c3c;
-            --success: #2ecc71;
+            --primary: #4a90e2; --bg: #f8f9fa; --card-bg: #ffffff;
+            --accent: #e67e22; --danger: #e74c3c; --success: #2ecc71;
         }
         body {
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-            background-color: var(--bg);
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-            margin: 0;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg); margin: 0;
+            padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+            display: flex; justify-content: center; color: #333;
         }
-        .container {
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-        h1 { margin-bottom: 20px; font-size: 1.8rem; color: #2c3e50; }
+        .container { max-width: 500px; width: 100%; display: flex; flex-direction: column; min-height: 90vh; }
+        h1 { font-size: 1.6rem; margin: 20px 0; text-align: center; }
 
-        /* 設定画面 */
-        #setup-screen {
-            background: white;
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        #name-inputs { margin: 20px 0; max-height: 300px; overflow-y: auto; }
-
-        /* ゲーム画面 */
-        #game-screen { display: none; }
-        .theme-box {
-            background: #fff;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
-            border-left: 5px solid var(--accent);
-        }
-        .theme-text { font-weight: bold; font-size: 1.3rem; color: var(--accent); }
-
-        .player-list { display: grid; gap: 15px; margin-bottom: 30px; }
-        .player-card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            border: 1px solid #f0f0f0;
-            overflow: hidden;
-        }
-        .rank-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: var(--success);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            display: none;
-        }
-        .player-name { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; }
+        .panel { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); margin-bottom: 20px; }
         
-        .memo-input {
-            width: 90%;
-            margin: 10px 0;
-            padding: 8px;
-            border: 1px dashed #ccc;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            text-align: center;
+        .screen { display: none; }
+        .active { display: block; }
+
+        /* 数字の表示スタイル（重要：hidden時は透明にする） */
+        .secret-num { font-size: 5rem; font-weight: 900; color: var(--primary); margin: 30px 0; transition: 0.3s; }
+        .number-display { font-size: 2.8rem; font-weight: 900; color: var(--primary); margin-top: 5px; transition: 0.3s; }
+        
+        /* 隠し状態の定義：透明度0にして完全に見えなくする */
+        .hidden { opacity: 0; pointer-events: none; }
+        .blur { filter: blur(30px); opacity: 0.1; }
+
+        input[type="text"], input[type="number"] {
+            width: 100%; padding: 16px; font-size: 16px; border: 2px solid #eee;
+            border-radius: 12px; margin-bottom: 10px; box-sizing: border-box;
         }
 
-        .number-display { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
-        .hidden { filter: blur(15px); color: #ddd; }
+        .player-list { display: grid; gap: 12px; }
+        .player-card {
+            background: var(--card-bg); padding: 18px; border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; position: relative;
+            min-height: 120px; display: flex; flex-direction: column; align-items: center;
+        }
+        .rank-badge { position: absolute; top: 12px; left: 12px; background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; display: none; }
+        .player-name { font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; width: 100%; text-align: left; }
 
-        /* ボタン */
-        .btn-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
         .btn {
-            color: white; border: none; padding: 12px 20px; border-radius: 30px;
-            font-size: 0.9rem; font-weight: bold; cursor: pointer; flex: 1; min-width: 120px;
+            border: none; padding: 18px; border-radius: 16px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: 0.2s; color: white; display: block; width: 100%; margin-top: 10px;
         }
-        .btn-main { background: var(--primary); width: 100%; margin-bottom: 10px; }
+        .btn-main { background: var(--primary); }
+        .btn-accent { background: var(--accent); }
         .btn-reveal { background: var(--danger); }
-        .btn-sort { background: var(--success); }
-        .btn-reset { background: #95a5a6; }
+        .btn-success { background: var(--success); }
+        .btn-sub { background: #adb5bd; }
+        .btn:active { opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -115,77 +62,116 @@
 <div class="container">
     <h1>ito Web Client</h1>
 
-    <div id="setup-screen">
-        <div class="input-group">
-            <label>プレイヤー人数 (1〜10人):</label>
-            <input type="number" id="player-count" value="4" min="1" max="10" onchange="generateNameInputs()">
-        </div>
+    <div id="setup-screen" class="screen active panel">
+        <label style="font-weight: bold;">プレイヤー人数:</label>
+        <input type="number" id="player-count" value="4" min="1" max="10" onchange="generateNameInputs()">
         <div id="name-inputs"></div>
-        <button class="btn btn-main" onclick="startGame()">ゲームを開始する</button>
+        <button class="btn btn-main" onclick="startGame()">ゲームを開始</button>
     </div>
 
-    <div id="game-screen">
-        <div class="theme-box">
-            <div id="theme" class="theme-text">- お題読み込み中 -</div>
-        </div>
+    <div id="reveal-screen" class="screen panel" style="text-align: center;">
+        <h2 id="current-player-prompt">次は 〇〇 さん</h2>
+        <p>他の人に見えないようにしてボタンを押してね</p>
+        <div id="secret-display" class="secret-num blur">?</div>
+        <button id="show-btn" class="btn btn-accent" onclick="toggleSecret(true)">自分の数字を見る</button>
+        <button id="hide-btn" class="btn btn-main" style="display:none;" onclick="nextStep()">確認した（隠す）</button>
+    </div>
 
+    <div id="game-screen" class="screen">
+        <div class="panel" style="border-left: 6px solid var(--accent);">
+            <div id="theme" style="font-weight: bold; font-size: 1.2rem; color: var(--accent);">お題：なし</div>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 5px;">カードをタップすると自分の数字を確認できます</p>
+        </div>
         <div id="players" class="player-list"></div>
-
-        <div class="btn-container">
-            <button class="btn btn-reveal" onclick="revealAll()">全員公開</button>
-            <button class="btn btn-sort" onclick="sortCards()">小さい順に並べる</button>
-            <button class="btn btn-reset" onclick="resetToSetup()">リセット</button>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-reveal" style="flex:1" onclick="revealAll()">全員公開</button>
+            <button class="btn btn-success" style="flex:1" onclick="sortCards()">順番公開</button>
         </div>
+        <button class="btn btn-sub" onclick="location.reload()">タイトルに戻る</button>
     </div>
 </div>
 
 <script>
-    const themes = [
-        "食べ物の人気", "怖いもの", "モテる趣味", "欲しい超能力", "ゾンビへの武器", "人生で大切なもの", "コンビニで買うもの", "嫌いな家事", "行きたい国", "嬉しいギフト", 
-        "習得したい言語の難しさ", "ショートカットキーの便利さ", "IT用語のかっこよさ", "デバッグの絶望感", "生成AIの賢さ", "プログラマーの私服", "SEの忙しさ", "Wi-Fiがないストレス", "プロジェクト進捗", "C言語の理解度",
-        "最強の必殺技", "悪役の魅力", "泣けるシーン", "転生したい世界", "呪術の使い勝手", "聖地巡礼したい場所", "SSRの嬉しさ", "アニソンの熱さ", "睡眠の質", "歌唱力", "怒られた時の怖さ", "幸福度", "運の良さ", "コミュ力"
-        // (お題は適宜追加・調整してください)
-    ];
+    const themes = ["食べ物の人気", "怖いもの", "モテる趣味", "欲しい超能力", "ゾンビへの武器", "IT用語のかっこよさ", "SEの忙しさ", "運の良さ", "コミュ力", "最強の必殺技", "転生したい世界", "睡眠の質", "無人島に持っていくもの", "嫌いな家事", "プログラミングの難易度", "便利な家電"];
 
-    window.onload = generateNameInputs;
+    let gameState = { names: [], numbers: [], currentIndex: 0 };
 
     function generateNameInputs() {
         const count = document.getElementById('player-count').value;
         const container = document.getElementById('name-inputs');
-        container.innerHTML = '<h3>プレイヤー名を入力</h3>';
+        container.innerHTML = '';
         for (let i = 1; i <= count; i++) {
-            container.innerHTML += `<div class="input-group"><input type="text" class="player-name-input" placeholder="プレイヤー ${i}" value="プレイヤー ${i}"></div>`;
+            container.innerHTML += `<input type="text" class="player-name-input" placeholder="プレイヤー ${i}" value="プレイヤー ${i}">`;
+        }
+    }
+    window.onload = generateNameInputs;
+
+    function startGame() {
+        gameState.names = Array.from(document.querySelectorAll('.player-name-input')).map(input => input.value || "名無し");
+        gameState.numbers = Array.from({length: 100}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        gameState.currentIndex = 0;
+        document.getElementById('theme').innerText = "お題：" + themes[Math.floor(Math.random() * themes.length)];
+        showScreen('reveal-screen');
+        updateRevealScreen();
+    }
+
+    function updateRevealScreen() {
+        document.getElementById('current-player-prompt').innerText = `次は ${gameState.names[gameState.currentIndex]} さん`;
+        toggleSecret(false);
+    }
+
+    function toggleSecret(show) {
+        const display = document.getElementById('secret-display');
+        const showBtn = document.getElementById('show-btn');
+        const hideBtn = document.getElementById('hide-btn');
+        if (show) {
+            display.innerText = gameState.numbers[gameState.currentIndex];
+            display.classList.remove('blur');
+            showBtn.style.display = 'none';
+            hideBtn.style.display = 'block';
+        } else {
+            display.innerText = '?';
+            display.classList.add('blur');
+            showBtn.style.display = 'block';
+            hideBtn.style.display = 'none';
         }
     }
 
-    function startGame() {
-        const names = Array.from(document.querySelectorAll('.player-name-input')).map(input => input.value || "名無し");
-        document.getElementById('setup-screen').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
+    function nextStep() {
+        gameState.currentIndex++;
+        if (gameState.currentIndex < gameState.names.length) {
+            updateRevealScreen();
+        } else {
+            initGameBoard();
+        }
+    }
 
-        const randomTheme = themes[Math.floor(Math.random() * themes.length)];
-        document.getElementById('theme').innerText = `お題：${randomTheme}`;
-
-        const numbers = Array.from({length: 100}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-
+    // ★重要：ゲーム画面生成時はすべて hidden クラスを適用して隠す
+    function initGameBoard() {
         const playerList = document.getElementById('players');
         playerList.innerHTML = '';
-        names.forEach((name, i) => {
+        gameState.names.forEach((name, i) => {
             const card = document.createElement('div');
             card.className = 'player-card';
-            // 数字をデータ属性(data-number)として持たせておくとソートが楽
-            card.setAttribute('data-number', numbers[i]);
+            card.setAttribute('data-number', gameState.numbers[i]);
             card.innerHTML = `
                 <div class="rank-badge"></div>
                 <div class="player-name">${name}</div>
-                <input type="text" class="memo-input" placeholder="例えをメモ..." onclick="event.stopPropagation()">
-                <div class="number-display hidden">${numbers[i]}</div>
+                <input type="text" class="memo-input" style="width:90%; padding:10px; border:1px dashed #bbb; border-radius:10px; font-size:0.9rem; text-align:center; margin-bottom:10px;" placeholder="例えをメモ..." onclick="event.stopPropagation()">
+                <div class="number-display hidden">${gameState.numbers[i]}</div>
             `;
+            // タップでその人の数字だけトグル（表示/非表示）
             card.onclick = function() {
                 this.querySelector('.number-display').classList.toggle('hidden');
             };
             playerList.appendChild(card);
         });
+        showScreen('game-screen');
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
         window.scrollTo(0,0);
     }
 
@@ -193,33 +179,17 @@
         document.querySelectorAll('.number-display').forEach(d => d.classList.remove('hidden'));
     }
 
-    // ★今回のメイン：並べ替え機能
     function sortCards() {
-        const playerList = document.getElementById('players');
-        const cards = Array.from(playerList.getElementsByClassName('player-card'));
-
-        // 数字(data-number)に基づいてソート
-        cards.sort((a, b) => {
-            return parseInt(a.getAttribute('data-number')) - parseInt(b.getAttribute('data-number'));
-        });
-
-        // ソートされた順にDOMを再配置し、順位バッジを表示
-        cards.forEach((card, index) => {
+        const list = document.getElementById('players');
+        const cards = Array.from(list.getElementsByClassName('player-card'));
+        cards.sort((a, b) => parseInt(a.getAttribute('data-number')) - parseInt(b.getAttribute('data-number')));
+        cards.forEach((card, i) => {
             const badge = card.querySelector('.rank-badge');
-            badge.innerText = `${index + 1}番目`;
+            badge.innerText = `${i + 1}番目`;
             badge.style.display = 'block';
-            playerList.appendChild(card); // appendChildは既存要素があれば移動させる性質がある
+            list.appendChild(card);
         });
-
-        // 並べ替えと同時に数字も公開する
-        revealAll();
-    }
-
-    function resetToSetup() {
-        if(confirm('リセットしますか？')) {
-            document.getElementById('setup-screen').style.display = 'block';
-            document.getElementById('game-screen').style.display = 'none';
-        }
+        revealAll(); // ソート時は答え合わせなので全員公開
     }
 </script>
 
