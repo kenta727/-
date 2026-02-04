@@ -23,12 +23,12 @@
         .screen { display: none; }
         .active { display: block; }
 
-        /* 数字の表示スタイル（重要：hidden時は透明にする） */
+        /* 数字の表示スタイル */
         .secret-num { font-size: 5rem; font-weight: 900; color: var(--primary); margin: 30px 0; transition: 0.3s; }
-        .number-display { font-size: 2.8rem; font-weight: 900; color: var(--primary); margin-top: 5px; transition: 0.3s; }
+        .number-display { font-size: 2.8rem; font-weight: 900; color: var(--primary); margin-top: 5px; transition: 0.2s; }
         
-        /* 隠し状態の定義：透明度0にして完全に見えなくする */
-        .hidden { opacity: 0; pointer-events: none; }
+        /* 隠し状態：完全に透明にする */
+        .hidden { opacity: 0 !important; pointer-events: none; }
         .blur { filter: blur(30px); opacity: 0.1; }
 
         input[type="text"], input[type="number"] {
@@ -41,8 +41,9 @@
             background: var(--card-bg); padding: 18px; border-radius: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; position: relative;
             min-height: 120px; display: flex; flex-direction: column; align-items: center;
+            -webkit-tap-highlight-color: transparent;
         }
-        .rank-badge { position: absolute; top: 12px; left: 12px; background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; display: none; }
+        .rank-badge { position: absolute; top: 12px; left: 12px; background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; display: none; z-index: 10; }
         .player-name { font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; width: 100%; text-align: left; }
 
         .btn {
@@ -95,8 +96,11 @@
     const themes = [
         "食べ物の人気", "怖いもの", "モテる趣味", "欲しい超能力", "ゾンビへの武器", "人生で大切なもの", "コンビニで買うもの", "嫌いな家事", "行きたい国", "嬉しいギフト", 
         "習得したい言語の難しさ", "ショートカットキーの便利さ", "IT用語のかっこよさ", "デバッグの絶望感", "生成AIの賢さ", "プログラマーの私服", "SEの忙しさ", "Wi-Fiがないストレス", "プロジェクト進捗", "C言語の理解度",
-        "最強の必殺技", "悪役の魅力", "泣けるシーン", "転生したい世界", "呪術の使い勝手", "聖地巡礼したい場所", "SSRの嬉しさ", "アニソンの熱さ", "睡眠の質", "歌唱力", "怒られた時の怖さ", "幸福度", "運の良さ", "コミュ力"
-        // (お題は適宜追加・調整してください)
+        "最強の必殺技", "悪役の魅力", "泣けるシーン", "転生したい世界", "呪術の使い勝手", "聖地巡礼したい場所", "SSRの嬉しさ", "アニソンの熱さ", "睡眠の質", "歌唱力", "怒られた時の怖さ", "幸福度", "運の良さ", "コミュ力",
+        "無人島に持っていくもの", "嫌いな家事", "理想の朝食", "運動会の種目", "動物の強さ", "おつまみ", "宝くじの使い道", "最高の休日", "将来の夢", "必殺技の名前", "悪魔の実の能力", "RPGの初期装備", "満員電車のストレス",
+        "貯金額の安心感", "幽霊を信じる度合い", "宇宙人の存在", "忍耐強さ", "嫉妬心", "語彙力", "集中力", "タイムマシンの値段", "魔法学校の難易度", "ドラゴンの飼いやすさ", "温泉の癒やし", "箱根駅伝の感動"
+    ]; // ここで配列を閉じました！
+
     let gameState = { names: [], numbers: [], currentIndex: 0 };
 
     function generateNameInputs() {
@@ -149,7 +153,6 @@
         }
     }
 
-    // ★重要：ゲーム画面生成時はすべて hidden クラスを適用して隠す
     function initGameBoard() {
         const playerList = document.getElementById('players');
         playerList.innerHTML = '';
@@ -192,7 +195,7 @@
             badge.style.display = 'block';
             list.appendChild(card);
         });
-        revealAll(); // ソート時は答え合わせなので全員公開
+        revealAll();
     }
 </script>
 
