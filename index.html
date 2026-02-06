@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ito Web - 大学生100連発 Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
             --primary: #4a90e2; --bg: #f8f9fa; --card-bg: #ffffff;
@@ -36,13 +37,30 @@
 
         .player-list { display: grid; gap: 12px; }
         .player-card {
-            background: var(--card-bg); padding: 18px; border-radius: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; position: relative;
-            min-height: 120px; display: flex; flex-direction: column; align-items: center;
-            -webkit-tap-highlight-color: transparent;
+            background: var(--card-bg); padding: 15px; border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; 
+            position: relative; display: flex; align-items: center; gap: 12px;
+            cursor: grab; transition: transform 0.2s;
         }
-        .rank-badge { position: absolute; top: 12px; left: 12px; background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; display: none; z-index: 10; }
-        .player-name { font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; width: 100%; text-align: left; }
+        .player-card:active { cursor: grabbing; }
+        
+        .sortable-ghost { opacity: 0.4; transform: scale(0.95); background: #e9ecef; }
+
+        .drag-handle { color: #ccc; font-size: 1.4rem; user-select: none; width: 20px; }
+
+        /* 修正箇所: card-main 内を中央寄せに */
+        .card-main { flex: 1; display: flex; flex-direction: column; align-items: center; margin-right: 20px; }
+        .rank-badge { position: absolute; top: 10px; left: 10px; background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; display: none; z-index: 10; }
+        
+        /* 修正箇所: プレイヤー名を中央寄せに */
+        .player-name { font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; width: 100%; text-align: center; }
+
+        .theme-box {
+            background: #fff5eb; border-left: 6px solid var(--accent); padding: 15px;
+            border-radius: 12px; margin-bottom: 20px; text-align: left;
+        }
+        .theme-label { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin-bottom: 4px; }
+        .theme-text { font-weight: bold; font-size: 1.2rem; color: #333; }
 
         .btn {
             border: none; padding: 18px; border-radius: 16px; font-size: 1rem; font-weight: bold;
@@ -69,6 +87,10 @@
     </div>
 
     <div id="reveal-screen" class="screen panel" style="text-align: center;">
+        <div class="theme-box">
+            <div class="theme-label">今回のお題</div>
+            <div id="theme-display-reveal" class="theme-text">---</div>
+        </div>
         <h2 id="current-player-prompt">次は 〇〇 さん</h2>
         <p>他の人に見えないようにしてボタンを押してね</p>
         <div id="secret-display" class="secret-num blur">?</div>
@@ -79,39 +101,30 @@
     <div id="game-screen" class="screen">
         <div class="panel" style="border-left: 6px solid var(--accent);">
             <div id="theme" style="font-weight: bold; font-size: 1.2rem; color: var(--accent);">お題：なし</div>
-            <p style="font-size: 0.8rem; color: #888; margin-top: 5px;">カードをタップすると自分の数字を確認できます</p>
+            <p style="font-size: 0.75rem; color: #888; margin-top: 5px;">カードをドラッグして小さい順に並び替えよう！</p>
         </div>
         <div id="players" class="player-list"></div>
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="btn btn-reveal" style="flex:1" onclick="revealAll()">全員公開</button>
-            <button class="btn btn-success" style="flex:1" onclick="sortCards()">順番公開</button>
+            <button class="btn btn-success" style="flex:1" onclick="sortCards()">正解順に並び替え</button>
         </div>
         <button class="btn btn-sub" onclick="location.reload()">タイトルに戻る</button>
     </div>
 </div>
 
 <script>
-    // 大学生向け100個のお題にアップデート
     const themes = [
-        // 食べ物・飲み物
-        "ラーメンのトッピングの強さ", "好きなお寿司のネタ", "最高の飲み物", "お菓子の「止まらなさ」", "コンビニスイーツの幸福度", "丼ものの完成度", "最強のパン（菓子パン・惣菜パン）", "焼肉の部位の格差", "嫌いな人が少なそうな食べ物", "自炊で作れたらかっこいい料理", "最後の晩餐で食べたいもの", "夏に食べたい冷たいもの", "冬に食べたい温かいもの", "辛い食べ物の限界", "居酒屋の「とりあえずの一品」",
-        // キャンパスライフ
-        "楽に単位が取れそうな講義名", "学食のメニューの満足度", "「この人、仕事できそう」と思う人の特徴", "大学の周りにあるお店の重要度", "通学時間の限界", "理想のサークル活動の充実度", "ゼミ・研究室の「当たり」度", "テスト前の「全然勉強してない」の信頼度", "空きコマの過ごし方の有意義さ", "履修登録の絶望感", "図書館での集中力", "学園祭の盛り上がり度", "教授の「オーラ」の強さ", "大学の近くにあると嬉しい施設", "「大学生だな」と感じる瞬間",
-        // 恋愛・対人関係
-        "モテる人の条件", "理想のデートスポット", "恋人に求める条件の優先順位", "異性のドキッとする仕草", "初対面でチェックするポイント", "「この人、自分のこと好きかも」と思う行動", "許せるわがままの境界線", "理想のプロポーズのシチュエーション", "友達から恋人に昇格する可能性", "浮気のボーダーライン", "復縁の可能性", "告白の成功率", "結婚相手に求める「安定感」", "恋人との連絡頻度の理想", "振られた時の立ち直りやすさ",
-        // アイテム・持ち物
-        "文房具の便利さ", "スマートフォンのアプリの依存度", "カバンの中にあると安心するもの", "もらって嬉しいプレゼント（予算3,000円）", "もらって困るプレゼント", "部屋にあるとおしゃれな家具", "旅行に必須の持ち物", "1人暮らしで最初に買うべき家電", "靴の「歩きやすさ」と「デザイン」のバランス", "傘の重要度", "財布の「中身入ってそう感」", "100円ショップで買うべきもの", "腕時計のステータス感", "便利なキッチン用品", "お守りの「効きそう」な雰囲気",
-        // 趣味・エンタメ
-        "一度はやってみたいスポーツ", "最高の映画のジャンル", "カラオケで盛り上がる曲の知名度", "続きが気になる漫画の展開", "行ってみたい都道府県", "一生に一度は行きたい世界遺産", "最高の休日", "YouTubeでつい見てしまうジャンル", "ゲームキャラの「強キャラ感」", "動物園で一番人気の動物", "楽器が弾けたらかっこいい度", "キャンプで一番楽しい瞬間", "好きな季節の「過ごしやすさ」", "アニメの「神回」の感動度", "ライブ・コンサートの熱狂度",
-        // 抽象的・センス系
-        "言葉の響きのかっこよさ", "色の「高級感」", "数字の「強そうなイメージ」", "「ちょうどいい」と感じる温度", "擬音語（擬態語）の勢い", "絶妙なダサさ", "ラスボス」っぽい名前", "魔法の名前（強そうか弱そうか）", "漢字一文字の「重み」", "影の薄さ",
-        // 感情・シチュエーション
-        "日常の「ちょっとした幸せ」", "「これは恥ずかしい」と思う瞬間", "怒りの沸点の低さ", "明日地球が滅びるとしたら感じる恐怖", "宝くじで3億円当たった時のリアクション", "深夜3時のテンション", "忘れ物をした時の焦り", "プレゼン前の緊張感", "休み明けの絶望感", "欲しかったものを手に入れた時の興奮",
-        // マイナー・少し考えたい
-        "ドラえもんの道具で地味だけど欲しいもの", "自分がRPGの村人だったらどんな役割か", "世の中からなくなってもギリギリ困らないもの", "自分の性格を動物に例えた時の強さ", "この100個のお題の中で一番盛り上がりそうなお題"
+        "ラーメンのトッピングの強さ", "好きなお寿司のネタ", "最高の飲み物", "お菓子の「止まらなさ」", "コンビニスイーツの幸福度", "丼ものの完成度", "最強のパン", "焼肉の部位の格差", "嫌いな人が少なそうな食べ物", "自炊で作れたらかっこいい料理", "最後の晩餐で食べたいもの", "夏に食べたい冷たいもの", "冬に食べたい温かいもの", "辛い食べ物の限界", "居酒屋の「とりあえずの一品」",
+        "楽に単位が取れそうな講義名", "学食のメニューの満足度", "仕事できそうと思う人の特徴", "大学の周りにあるお店の重要度", "通学時間の限界", "理想のサークル活動の充実度", "ゼミ・研究室の当たり度", "テスト前の全然勉強してないの信頼度", "空きコマの過ごし方の有意義さ", "履修登録の絶望感", "図書館での集中力", "学園祭の盛り上がり度", "教授のオーラの強さ", "大学の近くにあると嬉しい施設", "大学生だなと感じる瞬間",
+        "モテる人の条件", "理想 of デートスポット", "恋人に求める条件の優先順位", "異性のドキッとする仕草", "初対面でチェックするポイント", "自分のこと好きかもと思う行動", "許せるわがままの境界線", "理想のプロポーズ", "友達から恋人に昇格する可能性", "浮気のボーダーライン", "復縁の可能性", "告白の成功率", "結婚相手に求める安定感", "恋人との連絡頻度の理想", "振られた時の立ち直りやすさ",
+        "文房具の便利さ", "スマホアプリの依存度", "カバンにあると安心するもの", "もらって嬉しいプレゼント(3000円)", "もらって困るプレゼント", "部屋にあるとおしゃれな家具", "旅行に必須の持ち物", "1人暮らしで最初に買う家電", "靴のデザインと歩きやすさ", "傘の重要度", "財布の中身入ってそう感", "100円ショップで買うべきもの", "腕時計のステータス感", "便利なキッチン用品", "お守りの効きそうな雰囲気",
+        "一度はやってみたいスポーツ", "最高の映画ジャンル", "カラオケで盛り上がる曲", "続きが気になる漫画の展開", "行ってみたい都道府県", "一度は行きたい世界遺産", "最高の休日", "YouTubeでつい見てしまうもの", "ゲームキャラの強キャラ感", "動物園で一番人気の動物", "楽器が弾けたらカッコいい度", "キャンプで一番楽しい瞬間", "好きな季節の過ごしやすさ", "アニメの神回の感動度", "ライブの熱狂度",
+        "言葉の響きのかっこよさ", "色の高級感", "数字の強そうなイメージ", "ちょうどいいと感じる温度", "擬音語の勢い", "絶妙なダサさ", "ラスボスっぽい名前", "魔法の名前", "漢字一文字の重み", "影の薄さ",
+        "日常のちょっとした幸せ", "これは恥ずかしいと思う瞬間", "怒りの沸点", "明日地球が滅びる恐怖", "3億円当たった時の反応", "深夜3時のテンション", "忘れ物をした時の焦り", "プレゼン前の緊張感", "休み明けの絶望感", "欲しいものを手に入れた興奮",
+        "ドラえもんの道具で地味に欲しいもの", "RPGの村人ならどんな役割か", "なくなってもギリギリ困らないもの", "性格を動物に例えた強さ", "一番盛り上がりそうなお題"
     ];
 
-    let gameState = { names: [], numbers: [], currentIndex: 0 };
+    let gameState = { names: [], numbers: [], currentIndex: 0, currentTheme: "" };
 
     function generateNameInputs() {
         const count = document.getElementById('player-count').value;
@@ -127,7 +140,9 @@
         gameState.names = Array.from(document.querySelectorAll('.player-name-input')).map(input => input.value || "名無し");
         gameState.numbers = Array.from({length: 100}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
         gameState.currentIndex = 0;
-        document.getElementById('theme').innerText = "お題：" + themes[Math.floor(Math.random() * themes.length)];
+        gameState.currentTheme = themes[Math.floor(Math.random() * themes.length)];
+        document.getElementById('theme-display-reveal').innerText = gameState.currentTheme;
+        document.getElementById('theme').innerText = "お題：" + gameState.currentTheme;
         showScreen('reveal-screen');
         updateRevealScreen();
     }
@@ -172,15 +187,25 @@
             card.setAttribute('data-number', gameState.numbers[i]);
             card.innerHTML = `
                 <div class="rank-badge"></div>
-                <div class="player-name">${name}</div>
-                <input type="text" class="memo-input" style="width:90%; padding:10px; border:1px dashed #bbb; border-radius:10px; font-size:0.9rem; text-align:center; margin-bottom:10px;" placeholder="例えをメモ..." onclick="event.stopPropagation()">
-                <div class="number-display hidden">${gameState.numbers[i]}</div>
+                <div class="drag-handle">⋮⋮</div>
+                <div class="card-main">
+                    <div class="player-name">${name}</div>
+                    <input type="text" class="memo-input" style="width:100%; padding:10px; border:1px dashed #bbb; border-radius:10px; font-size:0.9rem; text-align:center; box-sizing:border-box;" placeholder="例えをメモ...">
+                    <div class="number-display hidden">${gameState.numbers[i]}</div>
+                </div>
             `;
-            card.onclick = function() {
-                this.querySelector('.number-display').classList.toggle('hidden');
-            };
             playerList.appendChild(card);
         });
+
+        // Sortableの初期化
+        new Sortable(playerList, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            handle: '.player-card',
+            filter: '.memo-input',
+            preventOnFilter: false
+        });
+
         showScreen('game-screen');
     }
 
